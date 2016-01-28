@@ -9,7 +9,7 @@ module WU
 
     uri = build_condition_uri(station)
     res = make_request(uri)
-    
+
     current = res["current_observation"]
     return toObservation(current)
 
@@ -19,7 +19,7 @@ module WU
 
     if !start_time.is_a?(Date)
       raise "start_time is not a date"
-    end 
+    end
 
     uri = build_history_uri(station, start_time, end_time)
     res = make_request(uri)
@@ -103,7 +103,7 @@ module WU
 
     epoch = date["epoch"]
     temperature = obs["temperature"]
-    
+
     return {"time" => epoch, "temperature" => temperature}
   end
 
