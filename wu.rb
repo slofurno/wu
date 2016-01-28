@@ -18,34 +18,29 @@ module WU
   def station_history (station, start_time, end_time=nil)
 
     if !start_time.is_a?(Date)
-      puts "start_time is not a date"
-      return
+      raise "start_time is not a date"
     end 
 
     uri = build_history_uri(station, start_time, end_time)
     res = make_request(uri)
 
     if !res.is_a?(Hash)
-      puts "response is not a hash"
-      return
+      raise "response is not a hash"
     end
 
     history = res["history"]
 
     if !history.is_a?(Hash)
-      puts "history is not a hash"
-      return
+      raise "history is not a hash"
     end
 
     days = history["days"]
 
     if !days.is_a?(Array)
-      puts "days is not an array"
-      return
+      raise "days is not an array"
     end
 
-    observations = days.map {|day| day["observations"].map {|obs| toObservation(obs) } }
-    return observations.reduce {|a, c| a + c}
+    return days.map {|day| toObservations(day) }.reduce {|a, c| a + c}
   end
 
   def format_date (n)
@@ -58,10 +53,11 @@ module WU
 
   private
 
+
   def make_request (uri)
     puts uri
     body = Net::HTTP.get(uri)
-    return JSON.parse(unfuck(body))
+    return JSON.parse(snowdepth(body))
   end
 
   def build_condition_uri (station)
@@ -77,8 +73,23 @@ module WU
     return uri
   end
 
-  def unfuck (json)
+  def snowdepth (json)
     json.gsub(/\"snowdepth\": T,/, "")
+  end
+
+  def toObservations (day)
+
+   if !day.is_a?(Hash)
+    raise "day is not a hash"
+   end
+
+   observations = day["observations"]
+
+   if !observations.is_a?(Array)
+    raise "missing observations array"
+   end
+
+   return observations.map {|obs| toObservation(obs) }
   end
 
   def toObservation (obs)
@@ -97,9 +108,4 @@ module WU
   end
 
 end
-
-t1 = Time.at(1453885269).to_date
-#t2 = Date.new(2016, 1, 1) 
-puts WU.station_history("KNYC", t1)
-puts WU.current_observation("KNYC")
 
