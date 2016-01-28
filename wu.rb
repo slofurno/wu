@@ -14,20 +14,20 @@ module WU
   end
 
   def station_history (station, start_time, end_time=nil)
-    raise "start_time is not a date" if !start_time.is_a?(Date)
+    raise "start_time is not a date" if !start_time.respond_to?(:to_date)
 
     uri = build_history_uri(station, start_time, end_time)
     res = make_request(uri)
 
-    raise "response is not a hash" if !res.is_a?(Hash)
+    raise "response is not a hash" if !res.respond_to?(:{})
 
     history = res["history"]
 
-    raise "history is not a hash" if !history.is_a?(Hash)
+    raise "history is not a hash" if !history.respond_to?(:{})
 
     days = history["days"]
 
-    raise "days is not an array" if !days.is_a?(Array)
+    raise "days is not iterable" if !days.respond_to?(:each)
 
     days.map {|day| toObservations(day) }.reduce {|a, c| a + c}
   end
@@ -58,8 +58,7 @@ module WU
     end_time = t2 ? format_date(t2) : ""
     puts "#{station} #{start_time} #{end_time}"
 
-    uri = URI("http://api.wunderground.com/api/606f3f6977348613/history_#{start_time}#{end_time}/units:english/v:2.0/q/#{station}.json")
-    uri
+    URI("http://api.wunderground.com/api/606f3f6977348613/history_#{start_time}#{end_time}/units:english/v:2.0/q/#{station}.json")
   end
 
   def snowdepth (json)
@@ -67,10 +66,10 @@ module WU
   end
 
   def toObservations (day)
-    raise "day is not a hash" if !day.is_a?(Hash)
+    raise "day is not a hash" if !day.respond_to?(:{})
 
     observations = day["observations"]
-    raise "missing observations array" if !observations.is_a?(Array)
+    raise "missing observations array" if !observations.respond_to?(:each)
 
     observations.map {|obs| toObservation(obs) }
   end
@@ -79,7 +78,7 @@ module WU
 
     date = obs["date"]
 
-    if !date.is_a?(Hash)
+    if !date.respond_to?(:{})
       puts "why isnt date a hash"
       return
     end
