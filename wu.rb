@@ -6,49 +6,38 @@ module WU
   extend self
 
   def current_observation (station)
-
     uri = build_condition_uri(station)
     res = make_request(uri)
 
     current = res["current_observation"]
     return toObservation(current)
-
   end
 
   def station_history (station, start_time, end_time=nil)
-
-    if !start_time.is_a?(Date)
-      raise "start_time is not a date"
-    end
+    raise "start_time is not a date" if !start_time.is_a?(Date)
 
     uri = build_history_uri(station, start_time, end_time)
     res = make_request(uri)
 
-    if !res.is_a?(Hash)
-      raise "response is not a hash"
-    end
+    raise "response is not a hash" if !res.is_a?(Hash)
 
     history = res["history"]
 
-    if !history.is_a?(Hash)
-      raise "history is not a hash"
-    end
+    raise "history is not a hash" if !history.is_a?(Hash)
 
     days = history["days"]
 
-    if !days.is_a?(Array)
-      raise "days is not an array"
-    end
+    raise "days is not an array" if !days.is_a?(Array)
 
-    return days.map {|day| toObservations(day) }.reduce {|a, c| a + c}
+    days.map {|day| toObservations(day) }.reduce {|a, c| a + c}
   end
 
   def format_date (n)
-    return n.strftime("%Y%m%d")
+    n.strftime("%Y%m%d")
   end
 
   def format_epoch (n)
-    return Time.at(n).strftime("%Y%m%d")
+    Time.at(n).strftime("%Y%m%d")
   end
 
   private
@@ -57,11 +46,11 @@ module WU
   def make_request (uri)
     puts uri
     body = Net::HTTP.get(uri)
-    return JSON.parse(snowdepth(body))
+    JSON.parse(snowdepth(body))
   end
 
   def build_condition_uri (station)
-    return URI("http://api.wunderground.com/api/606f3f6977348613/conditions/units:english/v:2.0/q/#{station}.json")
+    URI("http://api.wunderground.com/api/606f3f6977348613/conditions/units:english/v:2.0/q/#{station}.json")
   end
 
   def build_history_uri (station, t1, t2)
@@ -70,7 +59,7 @@ module WU
     puts "#{station} #{start_time} #{end_time}"
 
     uri = URI("http://api.wunderground.com/api/606f3f6977348613/history_#{start_time}#{end_time}/units:english/v:2.0/q/#{station}.json")
-    return uri
+    uri
   end
 
   def snowdepth (json)
@@ -78,18 +67,12 @@ module WU
   end
 
   def toObservations (day)
+    raise "day is not a hash" if !day.is_a?(Hash)
 
-   if !day.is_a?(Hash)
-    raise "day is not a hash"
-   end
+    observations = day["observations"]
+    raise "missing observations array" if !observations.is_a?(Array)
 
-   observations = day["observations"]
-
-   if !observations.is_a?(Array)
-    raise "missing observations array"
-   end
-
-   return observations.map {|obs| toObservation(obs) }
+    observations.map {|obs| toObservation(obs) }
   end
 
   def toObservation (obs)
